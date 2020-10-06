@@ -3,7 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 import sys
-#sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+# sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import os
 import datetime
 from timeit import time
@@ -28,20 +28,27 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
+name_of_class = 'sperm'
+video_path = '../video/test_video/sperm1.mp4'
+output_path = '../video/test_video_out/'
+output_name = 'test.avi'
+my_maxlen = 40
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--input",help="path to input video", default = 0)
-ap.add_argument("-c", "--class",help="name of class", default = "person")
+ap.add_argument("-i", "--input", help="path to input video",
+                default=video_path)
+ap.add_argument("-c", "--class", help="name of class", default=name_of_class)
 args = vars(ap.parse_args())
 
-pts = [deque(maxlen=30) for _ in range(9999)]
+pts = [deque(maxlen=my_maxlen) for _ in range(9999)]
 warnings.filterwarnings('ignore')
 
 # initialize a list of colors to represent each possible class label
 np.random.seed(100)
 COLORS = np.random.randint(0, 255, size=(200, 3),
-	dtype="uint8")
+                           dtype="uint8")
 #list = [[] for _ in range(100)]
+
 
 def main(yolo):
 
@@ -51,28 +58,32 @@ def main(yolo):
     nms_max_overlap = 1.0
 
     counter = []
-    #deep_sort
+    # deep_sort
     model_filename = 'model_data/market1501.pb'
-    encoder = gdet.create_box_encoder(model_filename,batch_size=1)
+    encoder = gdet.create_box_encoder(model_filename, batch_size=1)
 
     find_objects = ['person']
-    metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
+    metric = nn_matching.NearestNeighborDistanceMetric(
+        "cosine", max_cosine_distance, nn_budget)
     tracker = Tracker(metric)
 
     writeVideo_flag = True
     video_capture = cv2.VideoCapture(args["input"])
 
-
     if writeVideo_flag:
-    # Define the codec and create VideoWriter object
+        # Define the codec and create VideoWriter object
         w = int(video_capture.get(3))
         h = int(video_capture.get(4))
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        out = cv2.VideoWriter('./output/output.avi', fourcc, 15, (w, h))
+        out = cv2.VideoWriter(
+            output_path + args["input"][43:57] + args["class"] + '_' + output_name, fourcc, 15, (w, h))
         list_file = open('detection_rslt.txt', 'w')
         frame_index = -1
 
     fps = 0.0
+    real_id = 0
+    data = {}
+    data_id = {}
 
     while True:
 
@@ -82,15 +93,17 @@ def main(yolo):
         t1 = time.time()
 
         #image = Image.fromarray(frame)
-        image = Image.fromarray(frame[...,::-1]) #bgr to rgb
+        image = Image.fromarray(frame[..., ::-1])  # bgr to rgb
         boxs, confidence, class_names = yolo.detect_image(image)
-        features = encoder(frame,boxs)
+        features = encoder(frame, boxs)
         # score to 1.0 here).
-        detections = [Detection(bbox, 1.0, feature) for bbox, feature in zip(boxs, features)]
+        detections = [Detection(bbox, 1.0, feature)
+                      for bbox, feature in zip(boxs, features)]
         # Run non-maxima suppression.
         boxes = np.array([d.tlwh for d in detections])
         scores = np.array([d.confidence for d in detections])
-        indices = preprocessing.non_max_suppression(boxes, nms_max_overlap, scores)
+        indices = preprocessing.non_max_suppression(
+            boxes, nms_max_overlap, scores)
         detections = [detections[i] for i in indices]
 
         # Call the tracker
@@ -104,9 +117,10 @@ def main(yolo):
 
         for det in detections:
             bbox = det.to_tlbr()
-            cv2.rectangle(frame,(int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
-            #print(class_names)
-            #print(class_names[p])
+            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(
+                bbox[2]), int(bbox[3])), (255, 255, 255), 2)
+            # print(class_names)
+            # print(class_names[p])
 
         for track in tracker.tracks:
             if not track.is_confirmed() or track.time_since_update > 1:
@@ -116,60 +130,86 @@ def main(yolo):
             counter.append(int(track.track_id))
             bbox = track.to_tlbr()
             color = [int(c) for c in COLORS[indexIDs[i] % len(COLORS)]]
-            #print(frame_index)
+            # print(frame_index)
             list_file.write(str(frame_index)+',')
             list_file.write(str(track.track_id)+',')
-            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(color), 3)
-            b0 = str(bbox[0])#.split('.')[0] + '.' + str(bbox[0]).split('.')[0][:1]
-            b1 = str(bbox[1])#.split('.')[0] + '.' + str(bbox[1]).split('.')[0][:1]
-            b2 = str(bbox[2]-bbox[0])#.split('.')[0] + '.' + str(bbox[3]).split('.')[0][:1]
+            cv2.rectangle(frame, (int(bbox[0]), int(
+                bbox[1])), (int(bbox[2]), int(bbox[3])), (color), 3)
+            # .split('.')[0] + '.' + str(bbox[0]).split('.')[0][:1]
+            b0 = str(bbox[0])
+            # .split('.')[0] + '.' + str(bbox[1]).split('.')[0][:1]
+            b1 = str(bbox[1])
+            # .split('.')[0] + '.' + str(bbox[3]).split('.')[0][:1]
+            b2 = str(bbox[2]-bbox[0])
             b3 = str(bbox[3]-bbox[1])
 
             list_file.write(str(b0) + ','+str(b1) + ','+str(b2) + ','+str(b3))
-            #print(str(track.track_id))
+            # print(str(track.track_id))
             list_file.write('\n')
-            #list_file.write(str(track.track_id)+',')
-            cv2.putText(frame,str(track.track_id),(int(bbox[0]), int(bbox[1] -50)),0, 5e-3 * 150, (color),2)
+            # list_file.write(str(track.track_id)+',')
+
+            # 原始的物件編號
+            # cv2.putText(frame,str(track.track_id),(int(bbox[0]), int(bbox[1] -50)),0, 5e-3 * 150, (color),2)
+            # 新的物件編號(不會跳號)
+            try:
+                cv2.putText(frame, str(data_id[track.track_id]), (int(
+                    bbox[0]), int(bbox[1] - 10)), 0, 5e-3 * 120, (color), 2)
+            except KeyError:
+                real_id += 1
+                data_id.setdefault(track.track_id, real_id)
+                cv2.putText(frame, str(data_id[track.track_id]), (int(
+                    bbox[0]), int(bbox[1] - 10)), 0, 5e-3 * 120, (color), 2)
+                print(data_id[track.track_id])
+
             if len(class_names) > 0:
-               class_name = class_names[0]
-               cv2.putText(frame, str(class_names[0]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (color),2)
+                class_name = class_names[0]
+            # 畫出物件名稱
+            #    cv2.putText(frame, str(class_names[0]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (color),2)
 
             i += 1
-            #bbox_center_point(x,y)
-            center = (int(((bbox[0])+(bbox[2]))/2),int(((bbox[1])+(bbox[3]))/2))
-            #track_id[center]
+            # bbox_center_point(x,y)
+            center = (int(((bbox[0])+(bbox[2]))/2),
+                      int(((bbox[1])+(bbox[3]))/2))
+            # track_id[center]
 
             pts[track.track_id].append(center)
 
             thickness = 5
-            #center point
+            # center point
+            # 劃出重心
             cv2.circle(frame,  (center), 1, color, thickness)
 
-			# draw motion path
+            # draw motion path
+            # 劃出路徑
             for j in range(1, len(pts[track.track_id])):
                 if pts[track.track_id][j - 1] is None or pts[track.track_id][j] is None:
-                   continue
+                    continue
                 thickness = int(np.sqrt(64 / float(j + 1)) * 2)
-                cv2.line(frame,(pts[track.track_id][j-1]), (pts[track.track_id][j]),(color),thickness)
+                cv2.line(frame, (pts[track.track_id][j-1]),
+                         (pts[track.track_id][j]), (color), 2)
                 #cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
 
         count = len(set(counter))
-        cv2.putText(frame, "Total Pedestrian Counter: "+str(count),(int(20), int(120)),0, 5e-3 * 200, (0,255,0),2)
-        cv2.putText(frame, "Current Pedestrian Counter: "+str(i),(int(20), int(80)),0, 5e-3 * 200, (0,255,0),2)
-        cv2.putText(frame, "FPS: %f"%(fps),(int(20), int(40)),0, 5e-3 * 200, (0,255,0),3)
-        cv2.namedWindow("YOLO4_Deep_SORT", 0);
-        cv2.resizeWindow('YOLO4_Deep_SORT', 1024, 768);
+        # cv2.putText(frame, "Total Pedestrian Counter: "+str(count),(int(20), int(120)),0, 5e-3 * 200, (0,255,0),2)
+        # cv2.putText(frame, "Current Pedestrian Counter: "+str(i),(int(20), int(80)),0, 5e-3 * 200, (0,255,0),2)
+        # cv2.putText(frame, "FPS: %f"%(fps),(int(20), int(40)),0, 5e-3 * 200, (0,255,0),3)
+        cv2.putText(frame, "Total " + args["class"].capitalize() + " Counter: "+str(
+            count), (int(10), int(60)), 0, 5e-3 * 100, (0, 255, 0), 1)
+        cv2.putText(frame, "Current " + args["class"].capitalize() + " Counter: "+str(
+            i), (int(10), int(40)), 0, 5e-3 * 100, (0, 255, 0), 1)
+        cv2.putText(frame, "FPS: %f" % (fps), (10, 20),
+                    0, 5e-3 * 100, (0, 255, 0), 1)
+        cv2.namedWindow("YOLO4_Deep_SORT", 0)
+        cv2.resizeWindow('YOLO4_Deep_SORT', 1024, 768)
         cv2.imshow('YOLO4_Deep_SORT', frame)
-
 
         if writeVideo_flag:
             # save a frame
             out.write(frame)
             frame_index = frame_index + 1
 
-
-        fps  = ( fps + (1./(time.time()-t1)) ) / 2
-        out.write(frame)
+        fps = (fps + (1./(time.time()-t1))) / 2
+        # out.write(frame)
         frame_index = frame_index + 1
 
         # Press Q to stop!
@@ -180,16 +220,18 @@ def main(yolo):
     end = time.time()
 
     if len(pts[track.track_id]) != None:
-       print(args["input"][43:57]+": "+ str(count) + " " + str(class_name) +' Found')
+        print(args["input"][43:57]+": " + str(count) +
+              " " + str(class_name) + ' Found')
 
     else:
-       print("[No Found]")
-	#print("[INFO]: model_image_size = (960, 960)")
+        print("[No Found]")
+        #print("[INFO]: model_image_size = (960, 960)")
     video_capture.release()
     if writeVideo_flag:
         out.release()
         list_file.close()
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     main(YOLO())

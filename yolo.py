@@ -12,16 +12,16 @@ from keras.layers import Input
 
 class YOLO(object):
     def __init__(self):
-        self.model_path = ''
-        self.anchors_path = ''
-        self.classes_path = ''
+        self.model_path = '../weights/yolo4_sperm_13072.h5'
+        self.anchors_path = './model_data/yolo4_anchors_sperm_13072.txt'
+        self.classes_path = './model_data/my_classes_sperm.txt'
         self.gpu_num = 1
-        self.score = 0.5
+        self.score = 0.2
         self.iou = 0.5
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
-        self.model_image_size = (608, 608)  # fixed size or (None, None)
+        self.model_image_size = (416, 416)  # fixed size or (None, None)
         self.is_fixed_size = self.model_image_size != (None, None)
         self.boxes, self.scores, self.classes = self.generate()
 
@@ -106,8 +106,8 @@ class YOLO(object):
         return_class_names = []
         for i, c in reversed(list(enumerate(out_classes))):
             predicted_class = self.class_names[c]
-            if predicted_class != 'person':  # Modify to detect other classes.
-                continue
+            # if predicted_class != 'person':  # Modify to detect other classes.
+            #     continue
             box = out_boxes[i]
             score = out_scores[i]
             x = int(box[1])
