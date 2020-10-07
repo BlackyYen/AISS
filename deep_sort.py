@@ -29,7 +29,7 @@ config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
 name_of_class = 'sperm'
-video_path = '../video/test_video/sperm1.mp4'
+video_path = '../video/test_video/sperm3.mp4'
 output_path = '../video/test_video_out/'
 output_name = 'test.avi'
 my_maxlen = 40

@@ -24,12 +24,18 @@ from collections import deque
 from keras import backend
 import tensorflow as tf
 from tensorflow.compat.v1 import InteractiveSession
+
+from fuzzy_system import fuzzy_system, grade
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
+# mode = 'distance' or 'angle'
+mode = 'distance'
+
 name_of_class = 'sperm'
-video_path = '../video/test_video/sperm1.mp4'
+video_path = '../video/test_video/sperm3.mp4'
 output_path = '../video/test_video_out/'
 output_name = 'test.avi'
 my_maxlen = 40
@@ -84,11 +90,16 @@ def main(yolo):
     real_id = 0
     data = {}
     data_id = {}
+    ct = []
 
     while True:
 
         ret, frame = video_capture.read()  # frame shape 640*480*3
         if ret != True:
+            break
+        try:
+            org = frame.copy()
+        except AttributeError:
             break
         t1 = time.time()
 
@@ -117,8 +128,9 @@ def main(yolo):
 
         for det in detections:
             bbox = det.to_tlbr()
-            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(
-                bbox[2]), int(bbox[3])), (255, 255, 255), 2)
+            # 畫出 yolo 偵測框
+            # cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(
+            #     bbox[2]), int(bbox[3])), (255, 255, 255), 2)
             # print(class_names)
             # print(class_names[p])
 
@@ -133,8 +145,11 @@ def main(yolo):
             # print(frame_index)
             list_file.write(str(frame_index)+',')
             list_file.write(str(track.track_id)+',')
-            cv2.rectangle(frame, (int(bbox[0]), int(
-                bbox[1])), (int(bbox[2]), int(bbox[3])), (color), 3)
+
+            # 畫出 deepsort 預測框
+            # cv2.rectangle(frame, (int(bbox[0]), int(
+            #     bbox[1])), (int(bbox[2]), int(bbox[3])), (color), 3)
+
             # .split('.')[0] + '.' + str(bbox[0]).split('.')[0][:1]
             b0 = str(bbox[0])
             # .split('.')[0] + '.' + str(bbox[1]).split('.')[0][:1]
@@ -151,15 +166,15 @@ def main(yolo):
             # 原始的物件編號
             # cv2.putText(frame,str(track.track_id),(int(bbox[0]), int(bbox[1] -50)),0, 5e-3 * 150, (color),2)
             # 新的物件編號(不會跳號)
-            try:
-                cv2.putText(frame, str(data_id[track.track_id]), (int(
-                    bbox[0]), int(bbox[1] - 10)), 0, 5e-3 * 120, (color), 2)
-            except KeyError:
-                real_id += 1
-                data_id.setdefault(track.track_id, real_id)
-                cv2.putText(frame, str(data_id[track.track_id]), (int(
-                    bbox[0]), int(bbox[1] - 10)), 0, 5e-3 * 120, (color), 2)
-                print(data_id[track.track_id])
+            # try:
+            #     cv2.putText(frame, str(data_id[track.track_id]), (int(
+            #         bbox[0]), int(bbox[1] - 10)), 0, 5e-3 * 120, (color), 2)
+            # except KeyError:
+            #     real_id += 1
+            #     data_id.setdefault(track.track_id, real_id)
+            #     cv2.putText(frame, str(data_id[track.track_id]), (int(
+            #         bbox[0]), int(bbox[1] - 10)), 0, 5e-3 * 120, (color), 2)
+            #     print(data_id[track.track_id])
 
             if len(class_names) > 0:
                 class_name = class_names[0]
@@ -177,17 +192,127 @@ def main(yolo):
             thickness = 5
             # center point
             # 劃出重心
-            cv2.circle(frame,  (center), 1, color, thickness)
+            # cv2.circle(frame,  (center), 1, color, thickness)
 
             # draw motion path
             # 劃出路徑
-            for j in range(1, len(pts[track.track_id])):
-                if pts[track.track_id][j - 1] is None or pts[track.track_id][j] is None:
-                    continue
-                thickness = int(np.sqrt(64 / float(j + 1)) * 2)
-                cv2.line(frame, (pts[track.track_id][j-1]),
-                         (pts[track.track_id][j]), (color), 2)
-                #cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
+            # for j in range(1, len(pts[track.track_id])):
+            #     if pts[track.track_id][j - 1] is None or pts[track.track_id][j] is None:
+            #         continue
+            #     thickness = int(np.sqrt(64 / float(j + 1)) * 2)
+            #     cv2.line(frame, (pts[track.track_id][j-1]),
+            #              (pts[track.track_id][j]), (color), 2)
+            # cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
+
+            fr = my_maxlen
+            # pts[track.track_id][(len(pts[track.track_id])-1)] 當前偵之座標
+            if len(pts[track.track_id]) == fr:
+
+                # 計算向量
+                coordinate_cur = (pts[track.track_id]
+                                  [(len(pts[track.track_id]) - 1)])
+                coordinate_5 = (pts[track.track_id]
+                                [(len(pts[track.track_id])) - 5])
+                coordinate_10 = (pts[track.track_id]
+                                 [(len(pts[track.track_id])) - 10])
+                coordinate_15 = (pts[track.track_id]
+                                 [(len(pts[track.track_id])) - 15])
+                coordinate_20 = (pts[track.track_id]
+                                 [(len(pts[track.track_id])) - 20])
+                coordinate_40 = (pts[track.track_id]
+                                 [(len(pts[track.track_id])) - 40])
+                # 一個計算距離的向量
+                x1 = coordinate_cur[0]-coordinate_40[0]
+                y1 = coordinate_cur[1]-coordinate_40[1]
+                xy1 = np.array([x1, y1])
+                # 兩個計算角度差的向量
+                x2 = coordinate_cur[0]-coordinate_20[0]
+                y2 = coordinate_cur[1]-coordinate_20[1]
+                xy2 = np.array([x2, y2])
+                x3 = coordinate_20[0]-coordinate_40[0]
+                y3 = coordinate_20[1]-coordinate_40[1]
+                xy3 = np.array([x3, y3])
+                # 計算向量長度
+                d1 = np.sqrt(xy1.dot(xy1))
+                d2 = np.sqrt(xy2.dot(xy2))
+                d3 = np.sqrt(xy3.dot(xy3))
+                # 計算xy2與xy3兩個向量之間的角度差
+                cos_angle = xy2.dot(xy3)/(d2*d3)
+                angle = np.arccos(cos_angle)
+                angle2 = angle*360/2/np.pi
+                # 距離
+                d = round(d1, 1)
+                # 角度
+                a = round(angle2, 1)
+                if str(a) == 'nan':
+                    a = 0.0
+# =============================================================================
+#                     try:
+#                         cv2.putText(frame,str(data_id[track.track_id]),(int(bbox[0]), int(bbox[1] - 10)),0, 5e-3 * 120, (color),2)
+#                     except KeyError:
+#                         real_id += 1
+#                         data_id.setdefault(track.track_id, real_id)
+#                         cv2.putText(frame,str(data_id[track.track_id]),(int(bbox[0]), int(bbox[1] - 10)),0, 5e-3 * 120, (color),2)
+#                         print(data_id[track.track_id])
+# =============================================================================
+                # 建立字典
+                try:
+                    data[track.track_id][0][track.track_id]
+                except KeyError:
+                    real_id += 1
+                    data_id.setdefault(track.track_id, real_id)
+                    data_list = [data_id, [], [], []]
+                    data.setdefault(track.track_id, data_list)
+                data[track.track_id][1].append(d)
+                data[track.track_id][2].append(a)
+
+                # 把值平均並丟入模糊系統
+                if len(data[track.track_id][1]) == 20 and len(data[track.track_id][2]) == 20:
+                    d_total = 0
+                    a_total = 0
+                    for j in range(20):
+                        d_total += data[track.track_id][1][j]
+                        a_total += data[track.track_id][2][j]
+                    d_ave = round(d_total/20, 1)
+                    a_ave = round(a_total/20, 1)
+                    # fuzzy_system
+                    g = grade(grade_system=grade_system,
+                              input1=d_ave, input2=a_ave)
+                    # 刪除最舊的n筆資料
+                    while(True):
+                        del data[track.track_id][1][0], data[track.track_id][2][0]
+                        if len(data[track.track_id][1]) == 15 and len(data[track.track_id][2]) == 15:
+                            break
+                    data[track.track_id][3].clear()
+                    data[track.track_id][3].append(g)
+                try:
+                    # color(bgr)
+                    if data[track.track_id][3][0] >= 0 and data[track.track_id][3][0] <= 35:
+                        cv2.rectangle(frame, (int(
+                            bbox[0]-5), int(bbox[1])-5), (int(bbox[2]+5), int(bbox[3]+5)), [255, 0, 0], 2)
+                    elif data[track.track_id][3][0] <= 55:
+                        cv2.rectangle(frame, (int(
+                            bbox[0]-5), int(bbox[1])-5), (int(bbox[2]+5), int(bbox[3]+5)), [0, 255, 242], 2)
+                    elif data[track.track_id][3][0] <= 75:
+                        cv2.rectangle(frame, (int(
+                            bbox[0]-5), int(bbox[1])-5), (int(bbox[2]+5), int(bbox[3]+5)), [0, 255, 0], 2)
+                    elif data[track.track_id][3][0] <= 100:
+                        cv2.rectangle(frame, (int(
+                            bbox[0]-5), int(bbox[1]-5)), (int(bbox[2]+5), int(bbox[3]+5)), [0, 0, 255], 2)
+                except IndexError:
+                    break
+                try:
+                    ct[int(data[track.track_id][0][track.track_id]-1)]
+                except:
+                    ct.append(data[track.track_id][0][track.track_id])
+                    # 裁切圖片
+                    x1 = int(bbox[0]-5)
+                    x2 = int(bbox[2]+5)
+                    y1 = int(bbox[1]-5)
+                    y2 = int(bbox[3]+5)
+                    ww = int(x2-x1)
+                    hh = int(y2-y1)
+                    crop_img = org[y1: y2, x1: x2]
 
         count = len(set(counter))
         # cv2.putText(frame, "Total Pedestrian Counter: "+str(count),(int(20), int(120)),0, 5e-3 * 200, (0,255,0),2)
@@ -234,4 +359,5 @@ def main(yolo):
 
 
 if __name__ == '__main__':
+    gd, grade_system = fuzzy_system()
     main(YOLO())
