@@ -56,7 +56,7 @@ config.gpu_options.per_process_gpu_memory_fraction = 0.7
 session = InteractiveSession(config=config)
 
 name_of_class = 'sperm'
-video_path = '../video/test_video/1sec.mp4'
+video_path = '../video/test_video/sperm_1sec.mp4'
 output_path = '../video/test_video_out/'
 output_name = 'test.avi'
 my_maxlen = 40

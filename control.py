@@ -50,47 +50,49 @@ from keras.applications.mobilenet import preprocess_input
 
 from mobilenet_resize import resize_keep_aspectratio
 
-g1 = tf.Graph() # 加载到Session 1的graph
-g2 = tf.Graph() # 加载到Session 2的graph
- 
-sess1 = tf.Session(graph=g1) # Session1
-sess2 = tf.Session(graph=g2) # Session2
+g1 = tf.Graph()  # 加载到Session 1的graph
+g2 = tf.Graph()  # 加载到Session 2的graph
 
-with sess1.as_default(): 
+sess1 = tf.Session(graph=g1)  # Session1
+sess2 = tf.Session(graph=g2)  # Session2
+
+with sess1.as_default():
     with g1.as_default():
-        #load the model
-        #load json and create model
-        json_file = open("../weights/mobilenetv2_model.json", 'r')
+        # load the model
+        # load json and create model
+        json_file = open("../weights/mobilenetv2_model_v1.0.json", 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         model_mobilenet = model_from_json(loaded_model_json)
         # load weights into new model
-        model_mobilenet.load_weights("../weights/mobilenetv2_final_weights.h5")
+        model_mobilenet.load_weights("../weights/mobilenetv2_weights_v1.0.h5")
+
 
 class Controller1(QDialog, window_1):
-    def  __init__ (self, parent = None):
+    def __init__(self, parent=None):
         super(QDialog, self).__init__(parent)
         self.setupUi(self)
         self.pushButton_1.clicked.connect(self.handleLogin)
         self.setStyleSheet("background-color: whitesmoke")
-        self.setWindowOpacity(1) # 設定視窗透明度
-        
+        self.setWindowOpacity(1)  # 設定視窗透明度
+
         self.gif = QMovie('background/new_background.gif')
         #self.gif.setScaledSize(QSize().scaled(300, 370, Qt.KeepAspectRatio))
         self.label_movie.setScaledContents(True)
         self.label_movie.setMovie(self.gif)
         self.label_movie.setAlignment(Qt.AlignCenter)
         self.gif.start()
-        
+
     def handleLogin(self):
         if self.lineEdit_1.text() == '' and self.lineEdit_2.text() == '':
-            #關鍵
+            # 關鍵
             self.accept()
         else:
             QMessageBox.warning(self, 'Error', '使用者名稱或密碼錯誤，\n請重新嘗試！')
-        
+
+
 class Controller2(QMainWindow, window_2):
-    def  __init__ (self, parent = None):
+    def __init__(self, parent=None):
         super(QMainWindow, self).__init__(parent)
         self.setupUi(self)
         self.lcdNumber_1.setDigitCount(10)
@@ -103,8 +105,8 @@ class Controller2(QMainWindow, window_2):
         self.pushButton_3.clicked.connect(self.clear)
         self.pushButton_4.clicked.connect(self.process)
         self.setStyleSheet("background-color: whitesmoke")
-        self.setWindowOpacity(1) # 设置窗口透明度
-        
+        self.setWindowOpacity(1)  # 设置窗口透明度
+
         self.label_5.setEnabled(False)
         self.label_6.setEnabled(False)
         self.lineEdit_1.setEnabled(False)
@@ -113,7 +115,7 @@ class Controller2(QMainWindow, window_2):
         self.pushButton_2.setEnabled(False)
         self.pushButton_3.setEnabled(False)
         self.pushButton_4.setEnabled(False)
-        
+
         self.gif = QMovie('background/new_background2.gif')
         self.gif.setScaledSize(QSize().scaled(400, 500, Qt.KeepAspectRatio))
         self.label_movie.setMovie(self.gif)
@@ -121,11 +123,10 @@ class Controller2(QMainWindow, window_2):
         self.label_movie.setScaledContents(True)
         self.gif.start()
         self.switch = True
-        
-        
+
         # 设置边框样式 可选样式有Box Panel等
         self.label_show_image.setFrameShape(QtWidgets.QFrame.Box)
-        # 设置阴影 只有加了这步才能设置边框颜色 
+        # 设置阴影 只有加了这步才能设置边框颜色
         # 可选样式有Raised、Sunken、Plain（这个无法设置颜色）等
         self.label_show_image.setFrameShadow(QtWidgets.QFrame.Plain)
         # 设置线条宽度
@@ -141,7 +142,7 @@ class Controller2(QMainWindow, window_2):
         self.pushButton_3.setEnabled(True)
         self.pushButton_4.setEnabled(True)
         self.radioBtn = self.sender()
-        
+
     def onClicked2(self):
         self.label_5.setEnabled(True)
         self.lineEdit_1.setEnabled(True)
@@ -154,31 +155,31 @@ class Controller2(QMainWindow, window_2):
         self.radioBtn = self.sender()
 
     def read_file(self):
-        #選取文件
-        filename, filetype =QFileDialog.getOpenFileName(self, "選取文件", "C:/")
+        # 選取文件
+        filename, filetype = QFileDialog.getOpenFileName(self, "選取文件", "C:/")
         print(filename)
         self.lineEdit_1.setText(filename)
 
     def write_folder(self):
-        #選取文件夾
+        # 選取文件夾
         foldername = QFileDialog.getExistingDirectory(self, "選取文件夾", "C:/")
         foldername = foldername + '/'
         print(foldername)
         self.lineEdit_2.setText(foldername)
-        
+
     def clear(self):
         self.video_capture.release()
         self.label_show_image.clear()
         self.label_7.clear()
-        
+
     # 進行處理
     def process(self):
         try:
             self.label_7.setText('執行中！')
-            #print(self.radioBtn.text())
-            #獲取文件路徑
+            # print(self.radioBtn.text())
+            # 獲取文件路徑
             file_path = self.lineEdit_1.text()
-            #獲取文件夾路徑
+            # 獲取文件夾路徑
             folder_path = self.lineEdit_2.text()
             self.YD(YOLO(), file_path, folder_path)
             self.label_show_image.clear()
@@ -192,23 +193,23 @@ class Controller2(QMainWindow, window_2):
         except:
             fail_result = r'執行失敗，請再試一次！'
             self.label_7.setText(fail_result)
-    
-    def a(a,self):
+
+    def a(a, self):
         print(a)
-    
-    def YD(self,yolo, video_path, output_path):
+
+    def YD(self, yolo, video_path, output_path):
         gd, grade_system = fuzzy_system()
         # gpu 全開
         # config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
         # session = InteractiveSession(config=config)
         # gpu 使用0.7
-        gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7)
-        config=tf.ConfigProto(gpu_options=gpu_options)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.7)
+        config = tf.ConfigProto(gpu_options=gpu_options)
         session = tf.Session(config=config)
 
         name_of_class = 'sperm'
-        video_path = '../video/test_video/sperm3.mp4'
+        video_path = '../video/test_video/sperm_1sec.mp4'
         output_path = '../video/test_video_out/'
         output_name = 'test.avi'
         my_maxlen = 40
@@ -216,7 +217,8 @@ class Controller2(QMainWindow, window_2):
         ap = argparse.ArgumentParser()
         ap.add_argument("-i", "--input", help="path to input video",
                         default=video_path)
-        ap.add_argument("-c", "--class", help="name of class", default=name_of_class)
+        ap.add_argument("-c", "--class", help="name of class",
+                        default=name_of_class)
         args = vars(ap.parse_args())
 
         pts = [deque(maxlen=my_maxlen) for _ in range(9999)]
@@ -225,7 +227,7 @@ class Controller2(QMainWindow, window_2):
         # initialize a list of colors to represent each possible class label
         np.random.seed(100)
         COLORS = np.random.randint(0, 255, size=(200, 3),
-                                dtype="uint8")
+                                   dtype="uint8")
         #list = [[] for _ in range(100)]
 
         start = time.time()
@@ -279,7 +281,7 @@ class Controller2(QMainWindow, window_2):
             features = encoder(frame, boxs)
             # score to 1.0 here).
             detections = [Detection(bbox, 1.0, feature)
-                        for bbox, feature in zip(boxs, features)]
+                          for bbox, feature in zip(boxs, features)]
             # Run non-maxima suppression.
             boxes = np.array([d.tlwh for d in detections])
             scores = np.array([d.confidence for d in detections])
@@ -355,7 +357,7 @@ class Controller2(QMainWindow, window_2):
                 i += 1
                 # bbox_center_point(x,y)
                 center = (int(((bbox[0])+(bbox[2]))/2),
-                        int(((bbox[1])+(bbox[3]))/2))
+                          int(((bbox[1])+(bbox[3]))/2))
                 # track_id[center]
 
                 pts[track.track_id].append(center)
@@ -376,7 +378,6 @@ class Controller2(QMainWindow, window_2):
                 # 不要用
                 # cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
 
-
                 # 建立字典
                 # data[track.track_id][0] ID
                 # data[track.track_id][1] distance
@@ -389,8 +390,8 @@ class Controller2(QMainWindow, window_2):
                     data_id.setdefault(track.track_id, real_id)
                     data_list = [data_id, [], [], [], []]
                     data.setdefault(track.track_id, data_list)
-                # 每兩幀執行一次
-                if mbn%4 == 0 :
+                # 每幀執行一次
+                if mbn % 8 == 0:
                     # 裁切圖片
                     x1 = int(bbox[0])
                     x2 = int(bbox[2])
@@ -409,21 +410,25 @@ class Controller2(QMainWindow, window_2):
                             img = np.expand_dims(img, axis=0)
                             img = preprocess_input(img)
                             preds = model_mobilenet.predict(img)
-                            predictions = np.argmax(preds, axis = 1)[0]
-                            classes = ['amorphous', 'normal', 'pyriform', 'tapered']
+                            predictions = np.argmax(preds, axis=1)[0]
+                            classes = ['amorphous', 'normal',
+                                       'pyriform', 'tapered']
                             # print('Predicted:', classes[predictions])
-                            data[track.track_id][4].append(classes[predictions])
+                            data[track.track_id][4].append(
+                                classes[predictions])
                             # 寫出類別
                             if len(data[track.track_id][4]) == 40:
-                                maxlabel = max(data[track.track_id][4],key=data[track.track_id][4].count)
+                                maxlabel = max(
+                                    data[track.track_id][4], key=data[track.track_id][4].count)
                                 # cv2.putText(frame,str(maxlabel),(int(bbox[0]-6), int(bbox[1] - 12)),0, 5e-3 * 120, (0,0,0), 2)
                                 del data[track.track_id][4][0]
                 try:
-                    maxlabel = max(data[track.track_id][4],key=data[track.track_id][4].count)
-                    cv2.putText(frame,str(maxlabel),(int(bbox[0]-6), int(bbox[1] - 12)),0, 5e-3 * 120, (0,0,0), 2)
+                    maxlabel = max(data[track.track_id][4],
+                                   key=data[track.track_id][4].count)
+                    cv2.putText(frame, str(maxlabel), (int(
+                        bbox[0]-6), int(bbox[1] - 12)), 0, 5e-3 * 120, (0, 0, 0), 2)
                 except:
                     continue
-
 
                 fr = my_maxlen
                 # pts[track.track_id][(len(pts[track.track_id])-1)] 當前偵之座標
@@ -431,17 +436,17 @@ class Controller2(QMainWindow, window_2):
 
                     # 計算向量
                     coordinate_cur = (pts[track.track_id]
-                                    [(len(pts[track.track_id]) - 1)])
+                                      [(len(pts[track.track_id]) - 1)])
                     coordinate_5 = (pts[track.track_id]
                                     [(len(pts[track.track_id])) - 5])
                     coordinate_10 = (pts[track.track_id]
-                                    [(len(pts[track.track_id])) - 10])
+                                     [(len(pts[track.track_id])) - 10])
                     coordinate_15 = (pts[track.track_id]
-                                    [(len(pts[track.track_id])) - 15])
+                                     [(len(pts[track.track_id])) - 15])
                     coordinate_20 = (pts[track.track_id]
-                                    [(len(pts[track.track_id])) - 20])
+                                     [(len(pts[track.track_id])) - 20])
                     coordinate_40 = (pts[track.track_id]
-                                    [(len(pts[track.track_id])) - 40])
+                                     [(len(pts[track.track_id])) - 40])
                     # 一個計算距離的向量
                     x1 = coordinate_cur[0]-coordinate_40[0]
                     y1 = coordinate_cur[1]-coordinate_40[1]
@@ -491,7 +496,7 @@ class Controller2(QMainWindow, window_2):
                         a_ave = round(a_total/20, 1)
                         # fuzzy_system
                         g = grade(grade_system=grade_system,
-                                input1=d_ave, input2=a_ave)
+                                  input1=d_ave, input2=a_ave)
                         # 刪除最舊的n筆資料
                         while(True):
                             del data[track.track_id][1][0], data[track.track_id][2][0]
@@ -516,12 +521,16 @@ class Controller2(QMainWindow, window_2):
                     except IndexError:
                         break
                     # 將資料寫成文字檔案
-                    list_file.write(str(frame_index)+',')
-                    list_file.write(str(data[track.track_id][0][track.track_id])+',')
-                    list_file.write(str(round(((bbox[0])+(bbox[2]))/2,1))+','+str(round(((bbox[1])+(bbox[3]))/2,1))+',')
-                    list_file.write(str(round(d,1))+',')
-                    list_file.write(str(round(a,1))+',')
-                    list_file.write(str(round(g,1)))
+                    list_file.write(str('幀數: ') + str(frame_index) + ',')
+                    list_file.write(
+                        str('ID: ') + str(data[track.track_id][0][track.track_id]) + ',')
+                    list_file.write(str('X 座標: ') + str(round(((bbox[0])+(bbox[2]))/2, 1)) + ',' + str(
+                        'Y 座標: ') + str(round(((bbox[1])+(bbox[3]))/2, 1)) + ',')
+                    list_file.write(str('移動距離: ') + str(round(d, 1)) + ',')
+                    list_file.write(str('轉向角: ') + str(round(a, 1)) + ',')
+                    list_file.write(str('精子運動品質分數: ') + str(round(g, 1)) + ',')
+                    list_file.write(str('精子外觀分類: ') +
+                                    str(maxlabel))
                     list_file.write('\n')
 
             count = len(set(counter))
@@ -538,12 +547,13 @@ class Controller2(QMainWindow, window_2):
             # cv2.resizeWindow('YOLO4_Deep_SORT', 1024, 768)
             # cv2.imshow('YOLO4_Deep_SORT', frame)
 
-            fps = float('%.2f'%fps)
+            fps = float('%.2f' % fps)
             self.lcdNumber_1.display(fps)
             self.lcdNumber_2.display(i)
             self.lcdNumber_3.display(count)
             new_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            showImage = QtGui.QImage(new_frame.data, frame.shape[1], frame.shape[0], QtGui.QImage.Format_RGB888)
+            showImage = QtGui.QImage(
+                new_frame.data, frame.shape[1], frame.shape[0], QtGui.QImage.Format_RGB888)
             self.label_show_image.setPixmap(QtGui.QPixmap.fromImage(showImage))
 
             if writeVideo_flag:
@@ -561,10 +571,10 @@ class Controller2(QMainWindow, window_2):
         print(" ")
         print("[Finish]")
         end = time.time()
-        
+
         if len(pts[track.track_id]) != None:
             print(args["input"][43:57]+": " + str(count) +
-                " " + str(class_name) + ' Found')
+                  " " + str(class_name) + ' Found')
 
         else:
             print("[No Found]")
@@ -575,9 +585,9 @@ class Controller2(QMainWindow, window_2):
             list_file.close()
         cv2.destroyAllWindows()
 
-        if True :   
+        if True:
             # cloud_firestore
-            filePath = 'firebase/detection_rslt.txt'        
+            filePath = 'firebase/detection_rslt.txt'
 
             # 引用私密金鑰
             # path/to/serviceAccount.json 請用自己存放的路徑
@@ -587,29 +597,29 @@ class Controller2(QMainWindow, window_2):
             if self.switch:
                 firebase_admin.initialize_app(cred)
                 self.switch = False
-                
+
             # 初始化firestore
             db = firestore.client()
 
-            file = open(filePath,mode='r')
+            file = open(filePath, mode='r')
 
-            #將txt逐行存入test中
+            # 將txt逐行存入test中
             text = []
             for line in file:
-                text.append(line)    
+                text.append(line)
 
             file.close()
 
-            #將標籤和數值存入doc中
+            # 將標籤和數值存入doc中
             # doc={}
             dict = {}
             for data in text:
-                doc={}
+                doc = {}
                 data = data.split(',')
                 if data[0] in doc:
-                    doc[data[0]].setdefault(data[1],data[2:])
+                    doc[data[0]].setdefault(data[1], data[2:])
                 else:
-                    doc[data[0]]={data[1]:data[2:]}
+                    doc[data[0]] = {data[1]: data[2:]}
                 # dict.update(doc)
 
                 # 上傳(語法)
@@ -618,10 +628,10 @@ class Controller2(QMainWindow, window_2):
                 # collection_ref提供一個add的方法，input必須是文件，型別是dictionary
                 collection_ref.add(doc)
 
-if __name__=="__main__":
-    app=QtWidgets.QApplication(sys.argv)
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
     if Controller1().exec_() == QDialog.Accepted:
-        ui = Controller2()    
+        ui = Controller2()
         ui.show()
         sys.exit(app.exec_())
-
