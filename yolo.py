@@ -14,9 +14,9 @@ from keras.layers import Input
 
 class YOLO(object):
     def __init__(self):
-        self.model_path = r'C:\Users\Blacky\Desktop\an_intelligent_system_for_selecting_sperm\weights\yolo4_sperm_final.h5'
-        self.anchors_path = './model_data/yolo_anchors_sperm.txt'
-        self.classes_path = './model_data/sperm_classes.txt'
+        self.model_path = '../weights/yolov4_sperm_v1.0.h5'
+        self.anchors_path = './model_data/yolov4_anchors_sperm_v1.0.txt'
+        self.classes_path = './model_data/sperm_classes_v1.0.txt'
         # self.model_path = '../weights/yolo4_sperm_13072.h5'
         # self.anchors_path = './model_data/yolo4_anchors_sperm_13072.txt'
         # self.classes_path = './model_data/my_classes_sperm.txt'

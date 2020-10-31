@@ -43,12 +43,12 @@ with sess1.as_default():
     with g1.as_default():
         #load the model
         #load json and create model
-        json_file = open("../weights/mobilenetv2_model.json", 'r')
+        json_file = open("../weights/mobilenetv2_model_v1.0.json", 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         model_mobilenet = model_from_json(loaded_model_json)
         # load weights into new model
-        model_mobilenet.load_weights("../weights/mobilenetv2_final_weights.h5")
+        model_mobilenet.load_weights("../weights/mobilenetv2_weights_v1.0.h5")
 
 config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
@@ -222,7 +222,7 @@ def main(yolo):
                     continue
                 thickness = int(np.sqrt(64 / float(j + 1)) * 2)
                 cv2.line(frame, (pts[track.track_id][j-1]),
-                         (pts[track.track_id][j]), (255,255,255), 2)
+                         (pts[track.track_id][j]), (255, 255, 255), 2)
             # 劃出 class 名稱       
             # cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
 
