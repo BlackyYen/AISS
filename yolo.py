@@ -4,7 +4,9 @@ import numpy as np
 from keras import backend as K
 from keras.models import load_model
 
-from yolo4.model import yolo4_body, yolo_eval, Mish
+from nets.yolo4 import yolo_body as yolo4_body
+from nets.yolo4 import yolo_eval
+# from yolo4.model import yolo4_body, yolo_eval, Mish
 from yolo4.utils import letterbox_image
 import os
 from keras.utils import multi_gpu_model
@@ -12,11 +14,14 @@ from keras.layers import Input
 
 class YOLO(object):
     def __init__(self):
-        self.model_path = '../weights/yolo4_sperm_13072.h5'
-        self.anchors_path = './model_data/yolo4_anchors_sperm_13072.txt'
-        self.classes_path = './model_data/my_classes_sperm.txt'
+        self.model_path = r'C:\Users\Blacky\Desktop\an_intelligent_system_for_selecting_sperm\weights\yolo4_sperm_final.h5'
+        self.anchors_path = './model_data/yolo_anchors_sperm.txt'
+        self.classes_path = './model_data/sperm_classes.txt'
+        # self.model_path = '../weights/yolo4_sperm_13072.h5'
+        # self.anchors_path = './model_data/yolo4_anchors_sperm_13072.txt'
+        # self.classes_path = './model_data/my_classes_sperm.txt'
         self.gpu_num = 1
-        self.score = 0.2
+        self.score = 0.3
         self.iou = 0.5
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
@@ -51,7 +56,8 @@ class YOLO(object):
         # 載入模型，如果原來的模型裡已經包括了模型結構則直接載入。
         # 否則先載模型再載權重
         try:
-            self.yolo_model = load_model(model_path, custom_objects={'Mish': Mish}, compile=False)
+            self.yolo_model = load_model(model_path, compile=False)
+            # self.yolo_model = load_model(model_path, custom_objects={'Mish': Mish}, compile=False)
         except:
             self.yolo_model = yolo4_body(Input(shape=(None,None,3)), num_anchors//3, num_classes)
             self.yolo_model.load_weights(self.model_path)
@@ -106,8 +112,9 @@ class YOLO(object):
         return_class_names = []
         for i, c in reversed(list(enumerate(out_classes))):
             predicted_class = self.class_names[c]
-            # if predicted_class != 'person':  # Modify to detect other classes.
-            #     continue
+            #　選擇偵測對象
+            if predicted_class != 'whole':  # Modify to detect other classes.
+                continue
             box = out_boxes[i]
             score = out_scores[i]
             x = int(box[1])
