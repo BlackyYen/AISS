@@ -27,15 +27,36 @@ from tensorflow.compat.v1 import InteractiveSession
 
 from fuzzy_system import fuzzy_system, grade
 
+from keras.models import model_from_json
+from keras.preprocessing import image
+from keras.applications.mobilenet import preprocess_input
+
+from mobilenet_resize import resize_keep_aspectratio
+
+g1 = tf.Graph() # 加载到Session 1的graph
+g2 = tf.Graph() # 加载到Session 2的graph
+ 
+sess1 = tf.Session(graph=g1) # Session1
+sess2 = tf.Session(graph=g2) # Session2
+
+with sess1.as_default(): 
+    with g1.as_default():
+        #load the model
+        #load json and create model
+        json_file = open("../weights/mobilenetv2_model.json", 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        model_mobilenet = model_from_json(loaded_model_json)
+        # load weights into new model
+        model_mobilenet.load_weights("../weights/mobilenetv2_final_weights.h5")
+
 config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
+# config.gpu_options.allow_growth = True
+config.gpu_options.per_process_gpu_memory_fraction = 0.7
 session = InteractiveSession(config=config)
 
-# mode = 'distance' or 'angle'
-mode = 'distance'
-
 name_of_class = 'sperm'
-video_path = '../video/test_video/sperm3.mp4'
+video_path = '../video/test_video/1sec.mp4'
 output_path = '../video/test_video_out/'
 output_name = 'test.avi'
 my_maxlen = 40
@@ -83,7 +104,7 @@ def main(yolo):
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         out = cv2.VideoWriter(
             output_path + args["input"][43:57] + args["class"] + '_' + output_name, fourcc, 15, (w, h))
-        list_file = open('detection_rslt.txt', 'w')
+        list_file = open('./firebase/detection_rslt.txt', 'w')
         frame_index = -1
 
     fps = 0.0
@@ -143,8 +164,8 @@ def main(yolo):
             bbox = track.to_tlbr()
             color = [int(c) for c in COLORS[indexIDs[i] % len(COLORS)]]
             # print(frame_index)
-            list_file.write(str(frame_index)+',')
-            list_file.write(str(track.track_id)+',')
+            # list_file.write(str(frame_index)+',')
+            # list_file.write(str(track.track_id)+',')
 
             # 畫出 deepsort 預測框
             # cv2.rectangle(frame, (int(bbox[0]), int(
@@ -158,9 +179,9 @@ def main(yolo):
             b2 = str(bbox[2]-bbox[0])
             b3 = str(bbox[3]-bbox[1])
 
-            list_file.write(str(b0) + ','+str(b1) + ','+str(b2) + ','+str(b3))
+            # list_file.write(str(b0) + ','+str(b1) + ','+str(b2) + ','+str(b3))
             # print(str(track.track_id))
-            list_file.write('\n')
+            # list_file.write('\n')
             # list_file.write(str(track.track_id)+',')
 
             # 原始的物件編號
@@ -196,12 +217,13 @@ def main(yolo):
 
             # draw motion path
             # 劃出路徑
-            # for j in range(1, len(pts[track.track_id])):
-            #     if pts[track.track_id][j - 1] is None or pts[track.track_id][j] is None:
-            #         continue
-            #     thickness = int(np.sqrt(64 / float(j + 1)) * 2)
-            #     cv2.line(frame, (pts[track.track_id][j-1]),
-            #              (pts[track.track_id][j]), (color), 2)
+            for j in range(1, len(pts[track.track_id])):
+                if pts[track.track_id][j - 1] is None or pts[track.track_id][j] is None:
+                    continue
+                thickness = int(np.sqrt(64 / float(j + 1)) * 2)
+                cv2.line(frame, (pts[track.track_id][j-1]),
+                         (pts[track.track_id][j]), (255,255,255), 2)
+            # 劃出 class 名稱       
             # cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
 
             fr = my_maxlen
@@ -255,13 +277,17 @@ def main(yolo):
 #                         cv2.putText(frame,str(data_id[track.track_id]),(int(bbox[0]), int(bbox[1] - 10)),0, 5e-3 * 120, (color),2)
 #                         print(data_id[track.track_id])
 # =============================================================================
+                # data[track.track_id][0] ID
+                # data[track.track_id][1] distance
+                # data[track.track_id][2] angle
+                # data[track.track_id][3] fuzzy output
                 # 建立字典
                 try:
                     data[track.track_id][0][track.track_id]
                 except KeyError:
                     real_id += 1
                     data_id.setdefault(track.track_id, real_id)
-                    data_list = [data_id, [], [], []]
+                    data_list = [data_id, [], [], [], []]
                     data.setdefault(track.track_id, data_list)
                 data[track.track_id][1].append(d)
                 data[track.track_id][2].append(a)
@@ -281,7 +307,7 @@ def main(yolo):
                     # 刪除最舊的n筆資料
                     while(True):
                         del data[track.track_id][1][0], data[track.track_id][2][0]
-                        if len(data[track.track_id][1]) == 15 and len(data[track.track_id][2]) == 15:
+                        if len(data[track.track_id][1]) == 19 and len(data[track.track_id][2]) == 19:
                             break
                     data[track.track_id][3].clear()
                     data[track.track_id][3].append(g)
@@ -289,16 +315,16 @@ def main(yolo):
                     # color(bgr)
                     if data[track.track_id][3][0] >= 0 and data[track.track_id][3][0] <= 35:
                         cv2.rectangle(frame, (int(
-                            bbox[0]-5), int(bbox[1])-5), (int(bbox[2]+5), int(bbox[3]+5)), [255, 0, 0], 2)
+                            bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [255, 0, 0], 2)
                     elif data[track.track_id][3][0] <= 55:
                         cv2.rectangle(frame, (int(
-                            bbox[0]-5), int(bbox[1])-5), (int(bbox[2]+5), int(bbox[3]+5)), [0, 255, 242], 2)
+                            bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [0, 255, 242], 2)
                     elif data[track.track_id][3][0] <= 75:
                         cv2.rectangle(frame, (int(
-                            bbox[0]-5), int(bbox[1])-5), (int(bbox[2]+5), int(bbox[3]+5)), [0, 255, 0], 2)
+                            bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [0, 255, 0], 2)
                     elif data[track.track_id][3][0] <= 100:
                         cv2.rectangle(frame, (int(
-                            bbox[0]-5), int(bbox[1]-5)), (int(bbox[2]+5), int(bbox[3]+5)), [0, 0, 255], 2)
+                            bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [0, 0, 255], 2)
                 except IndexError:
                     break
                 try:
@@ -306,13 +332,41 @@ def main(yolo):
                 except:
                     ct.append(data[track.track_id][0][track.track_id])
                     # 裁切圖片
-                    x1 = int(bbox[0]-5)
-                    x2 = int(bbox[2]+5)
-                    y1 = int(bbox[1]-5)
-                    y2 = int(bbox[3]+5)
+                    x1 = int(bbox[0])
+                    x2 = int(bbox[2])
+                    y1 = int(bbox[1])
+                    y2 = int(bbox[3])
                     ww = int(x2-x1)
                     hh = int(y2-y1)
                     crop_img = org[y1: y2, x1: x2]
+                try:
+                    # 寫出類別
+                    cv2.putText(frame,str(data[track.track_id][4][0]),(int(bbox[0]-6), int(bbox[1] - 12)),0, 5e-3 * 120, (0,0,0), 2)
+                except:
+                    # mobilenet 分類
+                    with sess1.as_default():
+                        with sess1.graph.as_default():
+                            # cv2.imwrite('classImg.jpg',crop_img)
+                            # img_input = cv2.imread('classImg.jpg')
+                            img = resize_keep_aspectratio(crop_img)
+                            # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                            img = np.expand_dims(img, axis=0)
+                            img = preprocess_input(img)
+                            preds = model_mobilenet.predict(img)
+                            predictions = np.argmax(preds, axis = 1)[0]
+                            # classes = ['amorphous', 'normal', 'pyriform', 'tapered']
+                            classes = ['amorphous', 'normal', 'pyriform', 'tapered']
+                            print('Predicted:', classes[predictions])
+                            data[track.track_id][4].append(classes[predictions])
+
+                # 將資料寫成文字檔案
+                list_file.write(str(frame_index)+',')
+                list_file.write(str(data[track.track_id][0][track.track_id])+',')
+                list_file.write(str(round(((bbox[0])+(bbox[2]))/2,1))+','+str(round(((bbox[1])+(bbox[3]))/2,1))+',')
+                list_file.write(str(round(d,1))+',')
+                list_file.write(str(round(a,1))+',')
+                list_file.write(str(round(g,1)))
+                list_file.write('\n')
 
         count = len(set(counter))
         # cv2.putText(frame, "Total Pedestrian Counter: "+str(count),(int(20), int(120)),0, 5e-3 * 200, (0,255,0),2)
@@ -345,8 +399,9 @@ def main(yolo):
     end = time.time()
 
     if len(pts[track.track_id]) != None:
-        print(args["input"][43:57]+": " + str(count) +
-              " " + str(class_name) + ' Found')
+        # print(args["input"][43:57]+": " + str(count) +
+        #       " " + str(class_name) + ' Found')
+        print(str(count) + " " + str(class_name) + ' Found')
 
     else:
         print("[No Found]")
