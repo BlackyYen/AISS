@@ -529,7 +529,7 @@ class Controller2(QMainWindow, window_2):
                     list_file.write(str('移動距離: ') + str(round(d, 1)) + ',')
                     list_file.write(str('轉向角: ') + str(round(a, 1)) + ',')
                     list_file.write(str('精子運動品質分數: ') + str(round(g, 1)) + ',')
-                    list_file.write(str('精子外觀分類: ') +
+                    list_file.write(str('精子外觀種類: ') +
                                     str(maxlabel))
                     list_file.write('\n')
 
