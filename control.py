@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 15 10:30:41 2020
-
-@author: UCL
-"""
 from __future__ import division, print_function, absolute_import
 import os
 import sys
@@ -472,15 +466,13 @@ class Controller2(QMainWindow, window_2):
                     a = round(angle2, 1)
                     if str(a) == 'nan':
                         a = 0.0
-    # =============================================================================
-    #                     try:
-    #                         cv2.putText(frame,str(data_id[track.track_id]),(int(bbox[0]), int(bbox[1] - 10)),0, 5e-3 * 120, (color),2)
-    #                     except KeyError:
-    #                         real_id += 1
-    #                         data_id.setdefault(track.track_id, real_id)
-    #                         cv2.putText(frame,str(data_id[track.track_id]),(int(bbox[0]), int(bbox[1] - 10)),0, 5e-3 * 120, (color),2)
-    #                         print(data_id[track.track_id])
-    # =============================================================================
+                        # try:
+                        #     cv2.putText(frame,str(data_id[track.track_id]),(int(bbox[0]), int(bbox[1] - 10)),0, 5e-3 * 120, (color),2)
+                        # except KeyError:
+                        #     real_id += 1
+                        #     data_id.setdefault(track.track_id, real_id)
+                        #     cv2.putText(frame,str(data_id[track.track_id]),(int(bbox[0]), int(bbox[1] - 10)),0, 5e-3 * 120, (color),2)
+                        #     print(data_id[track.track_id])
 
                     data[track.track_id][1].append(d)
                     data[track.track_id][2].append(a)
@@ -585,7 +577,7 @@ class Controller2(QMainWindow, window_2):
             list_file.close()
         cv2.destroyAllWindows()
 
-        if True:
+        if False:
             # cloud_firestore
             filePath = 'firebase/detection_rslt.txt'
 
