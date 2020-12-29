@@ -253,6 +253,8 @@ class Controller2(QMainWindow, window_2):
             out = cv2.VideoWriter(
                 output_path + args["input"][43:57] + args["class"] + '_' +
                 output_name, fourcc, 15, (w, h))
+            if not os.path.isdir('./firebase'):
+                os.mkdir('./firebase')
             list_file = open('./firebase/detection_rslt.txt', 'w')
             frame_index = -1
 
