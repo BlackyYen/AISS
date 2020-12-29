@@ -209,9 +209,13 @@ class Controller2(QMainWindow, window_2):
         my_maxlen = 40
 
         ap = argparse.ArgumentParser()
-        ap.add_argument("-i", "--input", help="path to input video",
+        ap.add_argument("-i",
+                        "--input",
+                        help="path to input video",
                         default=video_path)
-        ap.add_argument("-c", "--class", help="name of class",
+        ap.add_argument("-c",
+                        "--class",
+                        help="name of class",
                         default=name_of_class)
         args = vars(ap.parse_args())
 
@@ -220,8 +224,7 @@ class Controller2(QMainWindow, window_2):
 
         # initialize a list of colors to represent each possible class label
         np.random.seed(100)
-        COLORS = np.random.randint(0, 255, size=(200, 3),
-                                   dtype="uint8")
+        COLORS = np.random.randint(0, 255, size=(200, 3), dtype="uint8")
         #list = [[] for _ in range(100)]
 
         start = time.time()
@@ -248,7 +251,8 @@ class Controller2(QMainWindow, window_2):
             h = int(video_capture.get(4))
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
             out = cv2.VideoWriter(
-                output_path + args["input"][43:57] + args["class"] + '_' + output_name, fourcc, 15, (w, h))
+                output_path + args["input"][43:57] + args["class"] + '_' +
+                output_name, fourcc, 15, (w, h))
             list_file = open('./firebase/detection_rslt.txt', 'w')
             frame_index = -1
 
@@ -274,8 +278,10 @@ class Controller2(QMainWindow, window_2):
             boxs, confidence, class_names = yolo.detect_image(image)
             features = encoder(frame, boxs)
             # score to 1.0 here).
-            detections = [Detection(bbox, 1.0, feature)
-                          for bbox, feature in zip(boxs, features)]
+            detections = [
+                Detection(bbox, 1.0, feature)
+                for bbox, feature in zip(boxs, features)
+            ]
             # Run non-maxima suppression.
             boxes = np.array([d.tlwh for d in detections])
             scores = np.array([d.confidence for d in detections])
@@ -322,8 +328,8 @@ class Controller2(QMainWindow, window_2):
                 # .split('.')[0] + '.' + str(bbox[1]).split('.')[0][:1]
                 b1 = str(bbox[1])
                 # .split('.')[0] + '.' + str(bbox[3]).split('.')[0][:1]
-                b2 = str(bbox[2]-bbox[0])
-                b3 = str(bbox[3]-bbox[1])
+                b2 = str(bbox[2] - bbox[0])
+                b3 = str(bbox[3] - bbox[1])
 
                 # list_file.write(str(b0) + ','+str(b1) + ','+str(b2) + ','+str(b3))
                 # print(str(track.track_id))
@@ -350,8 +356,8 @@ class Controller2(QMainWindow, window_2):
 
                 i += 1
                 # bbox_center_point(x,y)
-                center = (int(((bbox[0])+(bbox[2]))/2),
-                          int(((bbox[1])+(bbox[3]))/2))
+                center = (int(((bbox[0]) + (bbox[2])) / 2),
+                          int(((bbox[1]) + (bbox[3])) / 2))
                 # track_id[center]
 
                 pts[track.track_id].append(center)
@@ -364,10 +370,11 @@ class Controller2(QMainWindow, window_2):
                 # draw motion path
                 # 劃出路徑
                 for j in range(1, len(pts[track.track_id])):
-                    if pts[track.track_id][j - 1] is None or pts[track.track_id][j] is None:
+                    if pts[track.track_id][j - 1] is None or pts[
+                            track.track_id][j] is None:
                         continue
                     thickness = int(np.sqrt(64 / float(j + 1)) * 2)
-                    cv2.line(frame, (pts[track.track_id][j-1]),
+                    cv2.line(frame, (pts[track.track_id][j - 1]),
                              (pts[track.track_id][j]), (255, 255, 255), 2)
                 # 不要用
                 # cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
@@ -391,9 +398,9 @@ class Controller2(QMainWindow, window_2):
                     x2 = int(bbox[2])
                     y1 = int(bbox[1])
                     y2 = int(bbox[3])
-                    ww = int(x2-x1)
-                    hh = int(y2-y1)
-                    crop_img = org[y1: y2, x1: x2]
+                    ww = int(x2 - x1)
+                    hh = int(y2 - y1)
+                    crop_img = org[y1:y2, x1:x2]
                     # mobilenet 分類
                     with sess1.as_default():
                         with sess1.graph.as_default():
@@ -405,22 +412,25 @@ class Controller2(QMainWindow, window_2):
                             img = preprocess_input(img)
                             preds = model_mobilenet.predict(img)
                             predictions = np.argmax(preds, axis=1)[0]
-                            classes = ['amorphous', 'normal',
-                                       'pyriform', 'tapered']
+                            classes = [
+                                'amorphous', 'normal', 'pyriform', 'tapered'
+                            ]
                             # print('Predicted:', classes[predictions])
                             data[track.track_id][4].append(
                                 classes[predictions])
                             # 寫出類別
                             if len(data[track.track_id][4]) == 40:
                                 maxlabel = max(
-                                    data[track.track_id][4], key=data[track.track_id][4].count)
+                                    data[track.track_id][4],
+                                    key=data[track.track_id][4].count)
                                 # cv2.putText(frame,str(maxlabel),(int(bbox[0]-6), int(bbox[1] - 12)),0, 5e-3 * 120, (0,0,0), 2)
                                 del data[track.track_id][4][0]
                 try:
                     maxlabel = max(data[track.track_id][4],
                                    key=data[track.track_id][4].count)
-                    cv2.putText(frame, str(maxlabel), (int(
-                        bbox[0]-6), int(bbox[1] - 12)), 0, 5e-3 * 120, (0, 0, 0), 2)
+                    cv2.putText(frame, str(maxlabel),
+                                (int(bbox[0] - 6), int(bbox[1] - 12)), 0,
+                                5e-3 * 120, (0, 0, 0), 2)
                 except:
                     continue
 
@@ -429,37 +439,37 @@ class Controller2(QMainWindow, window_2):
                 if len(pts[track.track_id]) == fr:
 
                     # 計算向量
-                    coordinate_cur = (pts[track.track_id]
-                                      [(len(pts[track.track_id]) - 1)])
-                    coordinate_5 = (pts[track.track_id]
-                                    [(len(pts[track.track_id])) - 5])
-                    coordinate_10 = (pts[track.track_id]
-                                     [(len(pts[track.track_id])) - 10])
-                    coordinate_15 = (pts[track.track_id]
-                                     [(len(pts[track.track_id])) - 15])
-                    coordinate_20 = (pts[track.track_id]
-                                     [(len(pts[track.track_id])) - 20])
-                    coordinate_40 = (pts[track.track_id]
-                                     [(len(pts[track.track_id])) - 40])
+                    coordinate_cur = (pts[track.track_id][(
+                        len(pts[track.track_id]) - 1)])
+                    coordinate_5 = (
+                        pts[track.track_id][(len(pts[track.track_id])) - 5])
+                    coordinate_10 = (
+                        pts[track.track_id][(len(pts[track.track_id])) - 10])
+                    coordinate_15 = (
+                        pts[track.track_id][(len(pts[track.track_id])) - 15])
+                    coordinate_20 = (
+                        pts[track.track_id][(len(pts[track.track_id])) - 20])
+                    coordinate_40 = (
+                        pts[track.track_id][(len(pts[track.track_id])) - 40])
                     # 一個計算距離的向量
-                    x1 = coordinate_cur[0]-coordinate_40[0]
-                    y1 = coordinate_cur[1]-coordinate_40[1]
+                    x1 = coordinate_cur[0] - coordinate_40[0]
+                    y1 = coordinate_cur[1] - coordinate_40[1]
                     xy1 = np.array([x1, y1])
                     # 兩個計算角度差的向量
-                    x2 = coordinate_cur[0]-coordinate_20[0]
-                    y2 = coordinate_cur[1]-coordinate_20[1]
+                    x2 = coordinate_cur[0] - coordinate_20[0]
+                    y2 = coordinate_cur[1] - coordinate_20[1]
                     xy2 = np.array([x2, y2])
-                    x3 = coordinate_20[0]-coordinate_40[0]
-                    y3 = coordinate_20[1]-coordinate_40[1]
+                    x3 = coordinate_20[0] - coordinate_40[0]
+                    y3 = coordinate_20[1] - coordinate_40[1]
                     xy3 = np.array([x3, y3])
                     # 計算向量長度
                     d1 = np.sqrt(xy1.dot(xy1))
                     d2 = np.sqrt(xy2.dot(xy2))
                     d3 = np.sqrt(xy3.dot(xy3))
                     # 計算xy2與xy3兩個向量之間的角度差
-                    cos_angle = xy2.dot(xy3)/(d2*d3)
+                    cos_angle = xy2.dot(xy3) / (d2 * d3)
                     angle = np.arccos(cos_angle)
-                    angle2 = angle*360/2/np.pi
+                    angle2 = angle * 360 / 2 / np.pi
                     # 距離
                     d = round(d1, 1)
                     # 角度
@@ -478,51 +488,63 @@ class Controller2(QMainWindow, window_2):
                     data[track.track_id][2].append(a)
 
                     # 把值平均並丟入模糊系統
-                    if len(data[track.track_id][1]) == 20 and len(data[track.track_id][2]) == 20:
+                    if len(data[track.track_id][1]) == 20 and len(
+                            data[track.track_id][2]) == 20:
                         d_total = 0
                         a_total = 0
                         for j in range(20):
                             d_total += data[track.track_id][1][j]
                             a_total += data[track.track_id][2][j]
-                        d_ave = round(d_total/20, 1)
-                        a_ave = round(a_total/20, 1)
+                        d_ave = round(d_total / 20, 1)
+                        a_ave = round(a_total / 20, 1)
                         # fuzzy_system
                         g = grade(grade_system=grade_system,
-                                  input1=d_ave, input2=a_ave)
+                                  input1=d_ave,
+                                  input2=a_ave)
                         # 刪除最舊的n筆資料
-                        while(True):
-                            del data[track.track_id][1][0], data[track.track_id][2][0]
-                            if len(data[track.track_id][1]) == 19 and len(data[track.track_id][2]) == 19:
+                        while (True):
+                            del data[track.track_id][1][0], data[
+                                track.track_id][2][0]
+                            if len(data[track.track_id][1]) == 19 and len(
+                                    data[track.track_id][2]) == 19:
                                 break
                         data[track.track_id][3].clear()
                         data[track.track_id][3].append(g)
                     try:
                         # color(bgr)
-                        if data[track.track_id][3][0] >= 0 and data[track.track_id][3][0] <= 35:
-                            cv2.rectangle(frame, (int(
-                                bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [255, 0, 0], 2)
+                        if data[track.track_id][3][0] >= 0 and data[
+                                track.track_id][3][0] <= 35:
+                            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])),
+                                          (int(bbox[2]), int(bbox[3])),
+                                          [255, 0, 0], 2)
                         elif data[track.track_id][3][0] <= 55:
-                            cv2.rectangle(frame, (int(
-                                bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [0, 255, 242], 2)
+                            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])),
+                                          (int(bbox[2]), int(bbox[3])),
+                                          [0, 255, 242], 2)
                         elif data[track.track_id][3][0] <= 75:
-                            cv2.rectangle(frame, (int(
-                                bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [0, 255, 0], 2)
+                            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])),
+                                          (int(bbox[2]), int(bbox[3])),
+                                          [0, 255, 0], 2)
                         elif data[track.track_id][3][0] <= 100:
-                            cv2.rectangle(frame, (int(
-                                bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [0, 0, 255], 2)
+                            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])),
+                                          (int(bbox[2]), int(bbox[3])),
+                                          [0, 0, 255], 2)
                     except IndexError:
                         break
                     # 將資料寫成文字檔案
                     list_file.write(str('幀數: ') + str(frame_index) + ',')
                     list_file.write(
-                        str('ID: ') + str(data[track.track_id][0][track.track_id]) + ',')
-                    list_file.write(str('X 座標: ') + str(round(((bbox[0])+(bbox[2]))/2, 1)) + ',' + str(
-                        'Y 座標: ') + str(round(((bbox[1])+(bbox[3]))/2, 1)) + ',')
+                        str('ID: ') +
+                        str(data[track.track_id][0][track.track_id]) + ',')
+                    list_file.write(
+                        str('X 座標: ') +
+                        str(round(((bbox[0]) +
+                                   (bbox[2])) / 2, 1)) + ',' + str('Y 座標: ') +
+                        str(round(((bbox[1]) + (bbox[3])) / 2, 1)) + ',')
                     list_file.write(str('移動距離: ') + str(round(d, 1)) + ',')
                     list_file.write(str('轉向角: ') + str(round(a, 1)) + ',')
                     list_file.write(str('精子運動品質分數: ') + str(round(g, 1)) + ',')
-                    list_file.write(str('精子外觀種類: ') +
-                                    str(maxlabel))
+                    list_file.write(str('精子外觀種類: ') + str(maxlabel))
                     list_file.write('\n')
 
             count = len(set(counter))
@@ -544,8 +566,9 @@ class Controller2(QMainWindow, window_2):
             self.lcdNumber_2.display(i)
             self.lcdNumber_3.display(count)
             new_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            showImage = QtGui.QImage(
-                new_frame.data, frame.shape[1], frame.shape[0], QtGui.QImage.Format_RGB888)
+            showImage = QtGui.QImage(new_frame.data, frame.shape[1],
+                                     frame.shape[0],
+                                     QtGui.QImage.Format_RGB888)
             self.label_show_image.setPixmap(QtGui.QPixmap.fromImage(showImage))
 
             if writeVideo_flag:
@@ -553,7 +576,7 @@ class Controller2(QMainWindow, window_2):
                 out.write(frame)
                 frame_index = frame_index + 1
 
-            fps = (fps + (1./(time.time()-t1))) / 2
+            fps = (fps + (1. / (time.time() - t1))) / 2
             # out.write(frame)
             frame_index = frame_index + 1
 
@@ -565,8 +588,8 @@ class Controller2(QMainWindow, window_2):
         end = time.time()
 
         if len(pts[track.track_id]) != None:
-            print(args["input"][43:57]+": " + str(count) +
-                  " " + str(class_name) + ' Found')
+            print(args["input"][43:57] + ": " + str(count) + " " +
+                  str(class_name) + ' Found')
 
         else:
             print("[No Found]")
