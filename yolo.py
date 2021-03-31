@@ -4,25 +4,24 @@ import numpy as np
 from keras import backend as K
 from keras.models import load_model
 
-from nets.yolo4 import yolo_body as yolo4_body
+from nets.yolo4 import yolo_body
 from nets.yolo4 import yolo_eval
-# from yolo4.model import yolo4_body, yolo_eval, Mish
+
+# from yolo4.model import yolo_eval, Mish
 from yolo4.utils import letterbox_image
 import os
 from keras.utils import multi_gpu_model
 from keras.layers import Input
 
+
 class YOLO(object):
     def __init__(self):
-        self.model_path = '../weights/yolov4_sperm_v1.0.h5'
-        self.anchors_path = './model_data/yolov4_anchors_sperm_v1.0.txt'
-        self.classes_path = './model_data/sperm_classes_v1.0.txt'
-        # self.model_path = '../weights/yolo4_sperm_13072.h5'
-        # self.anchors_path = './model_data/yolo4_anchors_sperm_13072.txt'
-        # self.classes_path = './model_data/my_classes_sperm.txt'
+        self.model_path = './weights/sperm-416-ep484-loss19.222-val_loss25.046.h5'
+        self.anchors_path = './model_data/sperm_anchors.txt'
+        self.classes_path = './model_data/sperm_classes.txt'
         self.gpu_num = 1
-        self.score = 0.3
-        self.iou = 0.5
+        self.score = 0.5
+        self.iou = 0.3
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
@@ -47,20 +46,25 @@ class YOLO(object):
 
     def generate(self):
         model_path = os.path.expanduser(self.model_path)
-        assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
+        assert model_path.endswith(
+            '.h5'), 'Keras model or weights must be a .h5 file.'
 
         # 計算anchor及class數量
         num_anchors = len(self.anchors)
         num_classes = len(self.class_names)
 
         # 載入模型，如果原來的模型裡已經包括了模型結構則直接載入。
-        # 否則先載模型再載權重
+        # 否則先載入模型再載權重
         try:
             self.yolo_model = load_model(model_path, compile=False)
-            # self.yolo_model = load_model(model_path, custom_objects={'Mish': Mish}, compile=False)
         except:
-            self.yolo_model = yolo4_body(Input(shape=(None,None,3)), num_anchors//3, num_classes)
+            self.yolo_model = yolo_body(Input(shape=(None, None, 3)),
+                                        num_anchors // 3, num_classes)
             self.yolo_model.load_weights(self.model_path)
+        else:
+            assert self.yolo_model.layers[-1].output_shape[-1] == \
+                num_anchors/len(self.yolo_model.output) * (num_classes + 5), \
+                'Mismatch between model and given anchor and class sizes'
 
         print('{} model, anchors, and classes loaded.'.format(model_path))
 
@@ -72,24 +76,32 @@ class YOLO(object):
             map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)),
                 self.colors))
         np.random.seed(10101)  # Fixed seed for consistent colors across runs.
-        np.random.shuffle(self.colors)  # Shuffle colors to decorrelate adjacent classes.
+        np.random.shuffle(
+            self.colors)  # Shuffle colors to decorrelate adjacent classes.
         np.random.seed(None)  # Reset seed to default.
 
         # Generate output tensor targets for filtered bounding boxes.
         self.input_image_shape = K.placeholder(shape=(2, ))
-        if self.gpu_num>=2:
-            self.yolo_model = multi_gpu_model(self.yolo_model, gpus=self.gpu_num)
-        boxes, scores, classes = yolo_eval(self.yolo_model.output, self.anchors,
-                len(self.class_names), self.input_image_shape,
-                score_threshold=self.score, iou_threshold=self.iou)
+        if self.gpu_num >= 2:
+            self.yolo_model = multi_gpu_model(self.yolo_model,
+                                              gpus=self.gpu_num)
+        boxes, scores, classes = yolo_eval(self.yolo_model.output,
+                                           self.anchors,
+                                           len(self.class_names),
+                                           self.input_image_shape,
+                                           score_threshold=self.score,
+                                           iou_threshold=self.iou)
         return boxes, scores, classes
 
     def detect_image(self, image):
 
         if self.is_fixed_size:
-            assert self.model_image_size[0]%32 == 0, 'Multiples of 32 required'
-            assert self.model_image_size[1]%32 == 0, 'Multiples of 32 required'
-            boxed_image = letterbox_image(image, tuple(reversed(self.model_image_size)))
+            assert self.model_image_size[
+                0] % 32 == 0, 'Multiples of 32 required'
+            assert self.model_image_size[
+                1] % 32 == 0, 'Multiples of 32 required'
+            boxed_image = letterbox_image(
+                image, tuple(reversed(self.model_image_size)))
         else:
             new_image_size = (image.width - (image.width % 32),
                               image.height - (image.height % 32))
@@ -112,8 +124,7 @@ class YOLO(object):
         return_class_names = []
         for i, c in reversed(list(enumerate(out_classes))):
             predicted_class = self.class_names[c]
-            #　選擇偵測對象
-            if predicted_class != 'whole':  # Modify to detect other classes.
+            if predicted_class != 'head':  # Modify to detect other classes.
                 continue
             box = out_boxes[i]
             score = out_scores[i]
