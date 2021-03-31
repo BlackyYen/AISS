@@ -30,11 +30,11 @@ video_path = r'./video/sperm'
 results_path = r'./video/results'
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-i",
-                "--input",
-                help="path to input video",
+ap.add_argument('-i',
+                '--input',
+                help='path to input video',
                 default=os.path.join(video_path, video_name))
-ap.add_argument("-c", "--class", help="name of class", default='sperm')
+ap.add_argument('-c', '--class', help='name of class', default='sperm')
 args = vars(ap.parse_args())
 
 pts = [deque(maxlen=30) for _ in range(9999)]
@@ -42,7 +42,7 @@ warnings.filterwarnings('ignore')
 
 # initialize a list of colors to represent each possible class label
 np.random.seed(2021)
-COLORS = np.random.randint(0, 255, size=(200, 3), dtype="uint8")
+COLORS = np.random.randint(0, 255, size=(200, 3), dtype='uint8')
 #list = [[] for _ in range(100)]
 
 
@@ -59,13 +59,13 @@ def main(yolo):
     encoder = gdet.create_box_encoder(model_filename, batch_size=1)
 
     find_objects = ['person']
-    metric = nn_matching.NearestNeighborDistanceMetric("cosine",
+    metric = nn_matching.NearestNeighborDistanceMetric('cosine',
                                                        max_cosine_distance,
                                                        nn_budget)
     tracker = Tracker(metric)
 
     writeVideo_flag = True
-    video_capture = cv2.VideoCapture(args["input"])
+    video_capture = cv2.VideoCapture(args['input'])
 
     if writeVideo_flag:
         # Define the codec and create VideoWriter object
@@ -74,7 +74,7 @@ def main(yolo):
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         out = cv2.VideoWriter(os.path.join(results_path, video_name), fourcc,
                               30, (w, h))
-        list_file = open('detection_rslt.txt', 'w')
+        list_file = open(r'./detection_information/detection_rslt.txt', 'w')
         frame_index = -1
 
     fps = 0.0
@@ -196,23 +196,23 @@ def main(yolo):
                 #cv2.putText(frame, str(class_names[j]),(int(bbox[0]), int(bbox[1] -20)),0, 5e-3 * 150, (255,255,255),2)
 
         count = len(set(counter))
-        # cv2.putText(frame, "Total Pedestrian Counter: " + str(count),
+        # cv2.putText(frame, 'Total Pedestrian Counter: ' + str(count),
         #             (int(20), int(120)), 0, 5e-3 * 200, (0, 255, 0), 2)
-        # cv2.putText(frame, "Current Pedestrian Counter: " + str(i),
+        # cv2.putText(frame, 'Current Pedestrian Counter: ' + str(i),
         #             (int(20), int(80)), 0, 5e-3 * 200, (0, 255, 0), 2)
-        # cv2.putText(frame, "FPS: %f" % (fps), (int(20), int(40)), 0,
+        # cv2.putText(frame, 'FPS: %f' % (fps), (int(20), int(40)), 0,
         #             5e-3 * 200, (0, 255, 0), 3)
+        cv2.putText(frame, 'FPS: %f' % (fps), (10, 25), 0, 5e-3 * 125,
+                    (0, 255, 0), 2)
         cv2.putText(
             frame,
-            "Total " + args["class"].capitalize() + " Counter: " + str(count),
-            (int(10), int(60)), 0, 5e-3 * 100, (0, 255, 0), 1)
+            'Current ' + args['class'].capitalize() + ' Counter: ' + str(i),
+            (10, 50), 0, 5e-3 * 125, (0, 255, 0), 2)
         cv2.putText(
             frame,
-            "Current " + args["class"].capitalize() + " Counter: " + str(i),
-            (int(10), int(40)), 0, 5e-3 * 100, (0, 255, 0), 1)
-        cv2.putText(frame, "FPS: %f" % (fps), (10, 20), 0, 5e-3 * 100,
-                    (0, 255, 0), 1)
-        cv2.namedWindow("YOLOv4_DeepSORT", 0)
+            'Total ' + args['class'].capitalize() + ' Counter: ' + str(count),
+            (10, 75), 0, 5e-3 * 125, (0, 255, 0), 2)
+        cv2.namedWindow('YOLOv4_DeepSORT', 0)
         cv2.resizeWindow('YOLOv4_DeepSORT', 1024, 768)
         cv2.imshow('YOLOv4_DeepSORT', frame)
 
@@ -228,19 +228,19 @@ def main(yolo):
         # Press Q to stop!
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    print(" ")
-    print("[Finish]")
+    print(' ')
+    print('[Finish]')
     end = time.time()
 
     if len(pts[track.track_id]) != None:
-        print(args["input"][43:57] + ": " + str(count) + " " +
+        print(args['input'][43:57] + ': ' + str(count) + ' ' +
               str(class_name) + ' Found')
 
     else:
-        print("[No Found]")
+        print('[No Found]')
 
 
-#print("[INFO]: model_image_size = (960, 960)")
+#print('[INFO]: model_image_size = (960, 960)')
     video_capture.release()
     if writeVideo_flag:
         out.release()
