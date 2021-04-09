@@ -296,8 +296,8 @@ def yolo_eval(yolo_outputs,
               anchors,
               num_classes,
               image_shape,
-              max_boxes=20,
-              score_threshold=.6,
+              max_boxes=1000,
+              score_threshold=.5,
               iou_threshold=.5,
               letterbox_image=True):
     #---------------------------------------------------#

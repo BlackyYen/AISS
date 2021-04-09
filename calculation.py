@@ -72,7 +72,7 @@ def main(yolo):
         # Define the codec and create VideoWriter object
         w = int(video_capture.get(3))
         h = int(video_capture.get(4))
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(os.path.join(results_path, video_name), fourcc,
                               30, (w, h))
         list_file = open(r'./detection_information/detection_rslt.txt', 'w')
