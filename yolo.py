@@ -4,8 +4,8 @@ import numpy as np
 from keras import backend as K
 from keras.models import load_model
 
-from nets.yolo4 import yolo_body
-from nets.yolo4 import yolo_eval
+from nets.yolo4_org import yolo_body, yolo_eval
+# from nets.yolo4_sep import yolo_body, yolo_eval
 
 # from yolo4.model import yolo_eval, Mish
 from yolo4.utils import letterbox_image
@@ -16,16 +16,16 @@ from keras.layers import Input
 
 class YOLO(object):
     def __init__(self):
-        self.model_path = './weights/sperm-416-ep484-loss19.222-val_loss25.046.h5'
-        self.anchors_path = './model_data/sperm_anchors.txt'
-        self.classes_path = './model_data/sperm_classes.txt'
+        self.model_path = r'./model_weights/yolov4-sperm-size320-ep0888-loss17.0825-val_loss20.3568.h5'
+        self.anchors_path = r'./model_data/sperm_anchors-size320.txt'
+        self.classes_path = r'./model_data/sperm_classes.txt'
         self.gpu_num = 1
-        self.score = 0.5
+        self.score = 0.3
         self.iou = 0.3
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
-        self.model_image_size = (416, 416)  # fixed size or (None, None)
+        self.model_image_size = (320, 320)  # fixed size or (None, None)
         self.is_fixed_size = self.model_image_size != (None, None)
         self.boxes, self.scores, self.classes = self.generate()
 
