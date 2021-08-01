@@ -4,8 +4,8 @@ import numpy as np
 from keras import backend as K
 from keras.models import load_model
 
-from nets.yolo4_org import yolo_body, yolo_eval
-# from nets.yolo4_sep import yolo_body, yolo_eval
+# from nets.yolo4_org import yolo_body, yolo_eval
+from nets.yolo4_sep import yolo_body, yolo_eval
 
 # from yolo4.model import yolo_eval, Mish
 from yolo4.utils import letterbox_image
@@ -16,16 +16,17 @@ from keras.layers import Input
 
 class YOLO(object):
     def __init__(self):
-        self.model_path = r'./model_weights/yolov4-sperm-size320-ep0888-loss17.0825-val_loss20.3568.h5'
-        self.anchors_path = r'./model_data/sperm_anchors-size320.txt'
+        self.model_path = r'./model_weights/yolov4-ep0949-loss20.6124-val_loss23.9132.h5'
+        self.anchors_path = r'./model_data/sperm_anchors-size416.txt'
         self.classes_path = r'./model_data/sperm_classes.txt'
         self.gpu_num = 1
         self.score = 0.3
         self.iou = 0.3
+        self.max_boxes = 100
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
-        self.model_image_size = (320, 320)  # fixed size or (None, None)
+        self.model_image_size = (416, 416)  # fixed size or (None, None)
         self.is_fixed_size = self.model_image_size != (None, None)
         self.boxes, self.scores, self.classes = self.generate()
 
@@ -89,6 +90,7 @@ class YOLO(object):
                                            self.anchors,
                                            len(self.class_names),
                                            self.input_image_shape,
+                                           max_boxes=self.max_boxes,
                                            score_threshold=self.score,
                                            iou_threshold=self.iou)
         return boxes, scores, classes

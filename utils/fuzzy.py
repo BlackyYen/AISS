@@ -12,23 +12,23 @@ def main():
 
 
 def fuzzy_system():
-    distance = ctrl.Antecedent(np.arange(0, 320.01, 0.01), 'Moving Distance')
+    distance = ctrl.Antecedent(np.arange(0, 350.01, 0.01), 'Moving Distance')
     curvature = ctrl.Antecedent(np.arange(0, 1.01, 0.01), 'Path Curvature')
-    motility = ctrl.Consequent(np.arange(0, 100.01, 0.01), 'Motility')
+    motility = ctrl.Consequent(np.arange(0, 100.01, 0.01), 'Motility Score')
 
     distance['Motionless'] = fuzz.trapmf(distance.universe, [0, 0, 30, 60])
-    distance['Short'] = fuzz.trapmf(distance.universe, [30, 60, 90, 120])
-    distance['Medium'] = fuzz.trapmf(distance.universe, [90, 120, 150, 180])
-    distance['Long'] = fuzz.trapmf(distance.universe, [150, 180, 320, 320])
+    distance['Short'] = fuzz.trapmf(distance.universe, [30, 80, 130, 180])
+    distance['Medium'] = fuzz.trapmf(distance.universe, [130, 180, 230, 280])
+    distance['Long'] = fuzz.trapmf(distance.universe, [230, 280, 350, 350])
 
     curvature['Small'] = fuzz.trapmf(curvature.universe, [0, 0, 0.10, 0.20])
     curvature['Medium'] = fuzz.trapmf(curvature.universe,
                                       [0.10, 0.20, 0.30, 0.40])
     curvature['Large'] = fuzz.trapmf(curvature.universe, [0.30, 0.40, 1, 1])
 
-    motility['IM'] = fuzz.trapmf(motility.universe, [0, 0, 20, 30])
-    motility['NP'] = fuzz.trapmf(motility.universe, [20, 30, 50, 60])
-    motility['PR'] = fuzz.trapmf(motility.universe, [50, 60, 100, 100])
+    motility['IM'] = fuzz.trapmf(motility.universe, [0, 0, 20, 40])
+    motility['NP'] = fuzz.trapmf(motility.universe, [20, 40, 60, 80])
+    motility['PR'] = fuzz.trapmf(motility.universe, [60, 80, 100, 100])
 
     # # distance
     # distance.view()
@@ -81,7 +81,7 @@ def motility_system(motility_base, motility, moving_distance, path_curvature):
     # 輸出分數
     # print(motility_base.output['Motility'])
 
-    return motility_base.output['Motility']
+    return motility_base.output['Motility Score']
 
 
 if __name__ == '__main__':

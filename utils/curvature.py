@@ -3,12 +3,12 @@ from cv2 import cv2
 from scipy.spatial.distance import pdist
 
 
-def curvature(x2, y2):
-    x = (x2[0] - x2[0 - 1], y2[0] - y2[0 - 1])
-    y = (x2[0 + 1] - x2[0], y2[0 + 1] - y2[0])
-    d = 1 - pdist([x, y], 'cosine')
+def curvature(x, y):
+    vec_1 = (x[0] - x[-1], y[0] - y[-1])
+    vec_2 = (x[1] - x[0], y[1] - y[0])
+    d = 1 - pdist([vec_1, vec_2], 'cosine')
     sin = np.sqrt(1 - d**2)
-    dis = np.sqrt((x2[0 - 1] - x2[0 + 1])**2 + (y2[0 - 1] - y2[0 + 1])**2)
+    dis = np.sqrt((x[-1] - x[1])**2 + (y[-1] - y[1])**2)
     k = 2 * sin / dis
     return k
 
@@ -43,13 +43,13 @@ def path_curvature(frame, pts, track, maxlen, point_visualization=True):
     if point_visualization:
         for index in range(len(x_coor_1)):
             cv2.circle(frame, (x_coor_1[index], y_coor_1[index]), 1,
-                       [255, 0, 0], 8)
+                       [0, 0, 205], 8)  # Red3
         for index in range(len(x_coor_2)):
             cv2.circle(frame, (x_coor_2[index], y_coor_2[index]), 1,
-                       [0, 255, 0], 5)
+                       [0, 205, 0], 5)  # Green3
         for index in range(len(x_coor_3)):
             cv2.circle(frame, (x_coor_3[index], y_coor_3[index]), 1,
-                       [0, 0, 255], 2)
+                       [205, 0, 0], 2)  # Blue3
     # 從7個座標點中計算5個曲率
     freq = 0
     curv1 = 0
@@ -63,8 +63,8 @@ def path_curvature(frame, pts, track, maxlen, point_visualization=True):
             continue
         elif coor_pre[0] == coor_cur[0] and coor_pre[1] == coor_cur[1]:
             continue
-        cur = curvature(x2=(coor_cur[0], coor_mid[0], coor_pre[0]),
-                        y2=(coor_cur[1], coor_mid[1], coor_pre[1]))[0]
+        cur = curvature(x=(coor_cur[0], coor_mid[0], coor_pre[0]),
+                        y=(coor_cur[1], coor_mid[1], coor_pre[1]))[0]
         if cur >= 0.1:
             continue
         curv1 += cur
@@ -85,8 +85,8 @@ def path_curvature(frame, pts, track, maxlen, point_visualization=True):
             continue
         elif coor_pre[0] == coor_cur[0] and coor_pre[1] == coor_cur[1]:
             continue
-        cur = curvature(x2=(coor_cur[0], coor_mid[0], coor_pre[0]),
-                        y2=(coor_cur[1], coor_mid[1], coor_pre[1]))[0]
+        cur = curvature(x=(coor_cur[0], coor_mid[0], coor_pre[0]),
+                        y=(coor_cur[1], coor_mid[1], coor_pre[1]))[0]
         if cur >= 0.1:
             continue
         curv2 += cur
@@ -107,8 +107,8 @@ def path_curvature(frame, pts, track, maxlen, point_visualization=True):
             continue
         elif coor_pre[0] == coor_cur[0] and coor_pre[1] == coor_cur[1]:
             continue
-        cur = curvature(x2=(coor_cur[0], coor_mid[0], coor_pre[0]),
-                        y2=(coor_cur[1], coor_mid[1], coor_pre[1]))[0]
+        cur = curvature(x=(coor_cur[0], coor_mid[0], coor_pre[0]),
+                        y=(coor_cur[1], coor_mid[1], coor_pre[1]))[0]
         if cur >= 0.1:
             continue
         curv3 += cur

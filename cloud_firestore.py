@@ -16,24 +16,24 @@ firebase_admin.initialize_app(cred)
 # 初始化firestore
 db = firestore.client()
 
-file = open(filePath,mode='r')
+file = open(filePath, mode='r')
 
 #將txt逐行存入test中
 text = []
 for line in file:
-    text.append(line)    
+    text.append(line)
 
 file.close()
 
 #將標籤和數值存入doc中
-doc={}
+doc = {}
 dict = {}
 for data in text:
     data = data.split(',')
     if data[0] in doc:
-        doc[data[0]].setdefault(data[1],data[2:])
+        doc[data[0]].setdefault(data[1], data[2:])
     else:
-        doc[data[0]]={data[1]:data[2:]}
+        doc[data[0]] = {data[1]: data[2:]}
     dict.update(doc)
 
 # 語法

@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 from operator import itemgetter
 
+
 class Yolo4(object):
     def get_class(self):
         classes_path = os.path.expanduser(self.classes_path)
@@ -32,7 +33,8 @@ class Yolo4(object):
 
     def load_yolo(self):
         model_path = os.path.expanduser(self.model_path)
-        assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
+        assert model_path.endswith(
+            '.h5'), 'Keras model or weights must be a .h5 file.'
 
         self.class_names = self.get_class()
         self.anchors = self.get_anchors()
@@ -51,17 +53,23 @@ class Yolo4(object):
         self.sess = K.get_session()
 
         # Load model, or construct model and load weights.
-        self.yolo4_model = yolo4_body(Input(shape=(608, 608, 3)), num_anchors//3, num_classes)
+        self.yolo4_model = yolo4_body(Input(shape=(608, 608, 3)),
+                                      num_anchors // 3, num_classes)
 
         # Read and convert darknet weight
         print('Loading weights.')
         weights_file = open(self.weights_path, 'rb')
-        major, minor, revision = np.ndarray(
-            shape=(3, ), dtype='int32', buffer=weights_file.read(12))
-        if (major*10+minor)>=2 and major<1000 and minor<1000:
-            seen = np.ndarray(shape=(1,), dtype='int64', buffer=weights_file.read(8))
+        major, minor, revision = np.ndarray(shape=(3, ),
+                                            dtype='int32',
+                                            buffer=weights_file.read(12))
+        if (major * 10 + minor) >= 2 and major < 1000 and minor < 1000:
+            seen = np.ndarray(shape=(1, ),
+                              dtype='int64',
+                              buffer=weights_file.read(8))
         else:
-            seen = np.ndarray(shape=(1,), dtype='int32', buffer=weights_file.read(4))
+            seen = np.ndarray(shape=(1, ),
+                              dtype='int32',
+                              buffer=weights_file.read(4))
         print('Weights Header: ', major, minor, revision, seen)
 
         convs_to_load = []
@@ -81,40 +89,42 @@ class Yolo4(object):
             print('Converting ', i)
             if i == 93 or i == 101 or i == 109:
                 #no bn, with bias
-                weights_shape = self.yolo4_model.layers[convs_sorted[i][1]].get_weights()[0].shape
-                bias_shape = self.yolo4_model.layers[convs_sorted[i][1]].get_weights()[0].shape[3]
+                weights_shape = self.yolo4_model.layers[
+                    convs_sorted[i][1]].get_weights()[0].shape
+                bias_shape = self.yolo4_model.layers[
+                    convs_sorted[i][1]].get_weights()[0].shape[3]
                 filters = bias_shape
                 size = weights_shape[0]
                 darknet_w_shape = (filters, weights_shape[2], size, size)
                 weights_size = np.product(weights_shape)
 
-                conv_bias = np.ndarray(
-                    shape=(filters, ),
-                    dtype='float32',
-                    buffer=weights_file.read(filters * 4))
-                conv_weights = np.ndarray(
-                    shape=darknet_w_shape,
-                    dtype='float32',
-                    buffer=weights_file.read(weights_size * 4))
+                conv_bias = np.ndarray(shape=(filters, ),
+                                       dtype='float32',
+                                       buffer=weights_file.read(filters * 4))
+                conv_weights = np.ndarray(shape=darknet_w_shape,
+                                          dtype='float32',
+                                          buffer=weights_file.read(
+                                              weights_size * 4))
                 conv_weights = np.transpose(conv_weights, [2, 3, 1, 0])
-                self.yolo4_model.layers[convs_sorted[i][1]].set_weights([conv_weights, conv_bias])
+                self.yolo4_model.layers[convs_sorted[i][1]].set_weights(
+                    [conv_weights, conv_bias])
             else:
                 #with bn, no bias
-                weights_shape = self.yolo4_model.layers[convs_sorted[i][1]].get_weights()[0].shape
+                weights_shape = self.yolo4_model.layers[
+                    convs_sorted[i][1]].get_weights()[0].shape
                 size = weights_shape[0]
-                bn_shape = self.yolo4_model.layers[bns_sorted[bn_index][1]].get_weights()[0].shape
+                bn_shape = self.yolo4_model.layers[bns_sorted[bn_index]
+                                                   [1]].get_weights()[0].shape
                 filters = bn_shape[0]
                 darknet_w_shape = (filters, weights_shape[2], size, size)
                 weights_size = np.product(weights_shape)
 
-                conv_bias = np.ndarray(
-                    shape=(filters, ),
-                    dtype='float32',
-                    buffer=weights_file.read(filters * 4))
-                bn_weights = np.ndarray(
-                    shape=(3, filters),
-                    dtype='float32',
-                    buffer=weights_file.read(filters * 12))
+                conv_bias = np.ndarray(shape=(filters, ),
+                                       dtype='float32',
+                                       buffer=weights_file.read(filters * 4))
+                bn_weights = np.ndarray(shape=(3, filters),
+                                        dtype='float32',
+                                        buffer=weights_file.read(filters * 12))
 
                 bn_weight_list = [
                     bn_weights[0],  # scale gamma
@@ -122,14 +132,16 @@ class Yolo4(object):
                     bn_weights[1],  # running mean
                     bn_weights[2]  # running var
                 ]
-                self.yolo4_model.layers[bns_sorted[bn_index][1]].set_weights(bn_weight_list)
+                self.yolo4_model.layers[bns_sorted[bn_index][1]].set_weights(
+                    bn_weight_list)
 
-                conv_weights = np.ndarray(
-                    shape=darknet_w_shape,
-                    dtype='float32',
-                    buffer=weights_file.read(weights_size * 4))
+                conv_weights = np.ndarray(shape=darknet_w_shape,
+                                          dtype='float32',
+                                          buffer=weights_file.read(
+                                              weights_size * 4))
                 conv_weights = np.transpose(conv_weights, [2, 3, 1, 0])
-                self.yolo4_model.layers[convs_sorted[i][1]].set_weights([conv_weights])
+                self.yolo4_model.layers[convs_sorted[i][1]].set_weights(
+                    [conv_weights])
 
                 bn_index += 1
 
@@ -137,16 +149,26 @@ class Yolo4(object):
 
         self.yolo4_model.save(self.model_path)
 
-
-        if self.gpu_num>=2:
-            self.yolo4_model = multi_gpu_model(self.yolo4_model, gpus=self.gpu_num)
+        if self.gpu_num >= 2:
+            self.yolo4_model = multi_gpu_model(self.yolo4_model,
+                                               gpus=self.gpu_num)
 
         self.input_image_shape = K.placeholder(shape=(2, ))
-        self.boxes, self.scores, self.classes = yolo_eval(self.yolo4_model.output, self.anchors,
-                len(self.class_names), self.input_image_shape,
-                score_threshold=self.score)
+        self.boxes, self.scores, self.classes = yolo_eval(
+            self.yolo4_model.output,
+            self.anchors,
+            len(self.class_names),
+            self.input_image_shape,
+            score_threshold=self.score)
 
-    def __init__(self, score, iou, anchors_path, classes_path, model_path, weights_path, gpu_num=1):
+    def __init__(self,
+                 score,
+                 iou,
+                 anchors_path,
+                 classes_path,
+                 model_path,
+                 weights_path,
+                 gpu_num=1):
         self.score = score
         self.iou = iou
         self.anchors_path = anchors_path
@@ -159,6 +181,7 @@ class Yolo4(object):
     def close_session(self):
         self.sess.close()
 
+
 if __name__ == '__main__':
     model_path = 'yolo4_weight.h5'
     anchors_path = 'model_data/yolo4_anchors.txt'
@@ -170,6 +193,7 @@ if __name__ == '__main__':
 
     model_image_size = (608, 608)
 
-    yolo4_model = Yolo4(score, iou, anchors_path, classes_path, model_path, weights_path)
+    yolo4_model = Yolo4(score, iou, anchors_path, classes_path, model_path,
+                        weights_path)
 
     yolo4_model.close_session()
